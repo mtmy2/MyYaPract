@@ -6,7 +6,7 @@ def add_numbers(x_1: int, y_1: int) -> int:
     return x_1 + y_1
 
 
-def calculate_square_root(number: int) -> float:
+def calculate_square_root(number: int) -> int:
     return sqrt(number)
 
 
