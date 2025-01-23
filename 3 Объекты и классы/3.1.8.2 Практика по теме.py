@@ -17,7 +17,12 @@ class MushroomsCollector:
             list.append(self.mushrooms, mushroom_name)
         else:
             print('Нельзя добавить ядовитый гриб')
-  
+            
+    def __str__(self):
+        return [str(item) for item in self.mushrooms] #f'{self.mushrooms}'
+
+
+
     
     # Напишите магический метод __str__,
     # возвращающий перечень грибов из списка mushrooms 
