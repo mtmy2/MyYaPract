@@ -39,3 +39,4 @@ collector_2 = MushroomsCollector()
 collector_2.add_mushroom('Лисичка')
 print(collector_1)
 print(collector_2)
+#
