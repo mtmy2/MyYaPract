@@ -2,11 +2,11 @@ class MushroomsCollector:
     # Проверьте, нет ли здесь ошибки:
     
     def __init__(self):
-        mushrooms = []
+        self.mushrooms = []
 
     # Исправьте ошибку в этом методе.
     def is_poisonous(self, mushroom_name):
-        if mushroom_name == 'Мухомор' or 'Поганка':
+        if mushroom_name == 'Мухомор' or mushroom_name == 'Поганка':
             return True
         else:
             return False
@@ -19,8 +19,7 @@ class MushroomsCollector:
             print('Нельзя добавить ядовитый гриб')
             
     def __str__(self):
-        return [str(item) for item in self.mushrooms] #f'{self.mushrooms}'
-
+        return f'{", ".join(self.mushrooms)}'
 
 
     
