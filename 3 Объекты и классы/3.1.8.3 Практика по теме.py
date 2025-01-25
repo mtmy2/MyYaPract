@@ -24,7 +24,20 @@ class CipherMaster:
     def decipher(self, cipher_text, shift):
         # Метод должен возвращать исходный текст
         # с учётом переданного смещения shift.
-        pass
+        self.cipher_text = str.lower(cipher_text)
+        self.shift = -shift
+        self.new_text = ''
+        for index, current_original_letter in enumerate(self.cipher_text):
+            if str.find(self.alphabet, current_original_letter)>=0:
+                if str.find(self.alphabet, current_original_letter)+self.shift > 32:
+                    self.new_letter_index = str.find(self.alphabet, current_original_letter)+self.shift - 33
+                else:
+                    self.new_letter_index = str.find(self.alphabet, current_original_letter)+self.shift
+                self.new_letter = self.alphabet[self.new_letter_index]
+                self.new_text = f'{self.new_text}{self.new_letter}'
+            else:
+                self.new_text = f'{self.new_text}{current_original_letter}'        
+        return self.new_text   
 
 
 cipher_master = CipherMaster()
