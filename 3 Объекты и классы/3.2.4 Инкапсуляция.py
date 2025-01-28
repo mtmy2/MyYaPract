@@ -1,18 +1,18 @@
 class Employee:
     vacation_days = 28
 
+ 
     def __init__(self, first_name, second_name, gender):
         self.first_name = first_name
         self.second_name = second_name
         self.gender = gender
         self.remaining_vacation_days = Employee.vacation_days
+        def __generate_employee_id(first_name, second_name, gender):
+            self.first_name = first_name
+            self.second_name = second_name
+            self.gender = gender
+            return hash(self.first_name + self.second_name + self.gender)
         self._employee_id = __generate_employee_id(first_name, second_name, gender)
-
-    def __generate_employee_id(self, first_name, second_name, gender):
-        self.first_name = first_name
-        self.second_name = second_name
-        self.gender = gender
-        return hash(f'{self.first_name}{self.second_name}{self.gender}')
 
     def consume_vacation(self, days):
         self.remaining_vacation_days -= days
