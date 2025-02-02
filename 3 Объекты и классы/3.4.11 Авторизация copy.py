@@ -15,21 +15,22 @@ if __name__ == '__main__':
     response = session.get(LOGIN_URL)
     
     #поиск csrfm
-    #print(str.find(response.text, 'csrfmiddlewaretoken'))
-    #splitted_request = response.text.split()
-    #print(splitted_request)
-    #item_num = -1
-    #for item in splitted_request:
-    #    item_num += 1
-    #    if str.find(item, 'csrfmiddlewaretoken') >= 0:
-    #        value_list = (splitted_request[item_num+1]).split('"')
-    #        value = value_list[1]
-            #print(value)
+    print(str.find(response.text, 'csrfmiddlewaretoken'))
+    splitted_request = response.text.split()
+    print(splitted_request)
+    item_num = -1
+    for item in splitted_request:
+        item_num += 1
+        if str.find(item, 'csrfmiddlewaretoken') >= 0:
+            value_list = (splitted_request[item_num+1]).split('"')
+            value = value_list[1]
+            print(value)
     soup = BeautifulSoup(response.text, 'html.parser')
     value = soup.find('input', {'name': 'csrfmiddlewaretoken'})
-    print(value)
-    data['csrfmiddlewaretoken'] = value
-    #print(data)
+    token = value['value']
+    print(token)
+    data['csrfmiddlewaretoken'] = token
+    print(data)
     #print(response.text)
 
     print(session.cookies.get_dict())
