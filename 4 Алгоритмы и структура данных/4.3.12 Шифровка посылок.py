@@ -12,7 +12,7 @@ class MarsURLEncoder:
         if hash in self.url_storage:
             hash = choice(long_url)+choice(long_url)+choice(long_url)+choice(long_url)+choice(long_url)+choice(long_url)
         self.url_storage[hash] = long_url
-        return hash
+        return f'https://ma.rs/{hash}'
 
     def decode(self, short_url):
         """Декодирует короткую ссылку вида https://ma.rs/X7NYIol в исходную."""
@@ -24,6 +24,8 @@ class MarsURLEncoder:
 url = 'https://tsup.ru/mars/marsohod-1/01-09-2023/daily_job.html'
 #hash = choice(url)+choice(url)+choice(url)+choice(url)+choice(url)+choice(url)
 url_make = MarsURLEncoder()
-hash = url_make.encode(url)
+hash = str.split(url_make.encode(url), '.rs/')[1]
 long_url = url_make.decode(f'https://ma.rs/{hash}')
-url_make.url_storage[0]
+print(hash)
+print(long_url)
+# url_make.url_storage[0]
