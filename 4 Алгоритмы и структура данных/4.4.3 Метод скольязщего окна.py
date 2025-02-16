@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
 
 
-
+# Итог:
 data = [5, -3, -2, 10, 2, 7, 1, -6, 13]
 elements_in_slice = 4
 
