@@ -36,3 +36,22 @@ WHERE customer_id BETWEEN 20 AND 50 -- дополните условие;
     AND EXTRACT(WEEK FROM CAST(invoice_date AS timestamp)) IN (5, 7, 10, 33, 48)
 
 
+4.
+Выгрузите из таблицы invoice всю информацию о заказах, оформленных первого числа каждого месяца, 
+которые были совершены клиентами без указанной компании — поле company из таблицы client не заполнено. 
+Приведите дату к типу timestamp.
+
+SELECT i.*
+FROM chinook.invoice as i
+INNER JOIN chinook.client as c USING (customer_id)
+WHERE EXTRACT(day FROM CAST(i.invoice_date as timestamp)) = 1
+    AND c.company IS NULL
+
+
+5.
+Выгрузите адреса электронной почты сотрудников из города Калгари (англ. Calgary), которых наняли на работу в 2002 году.
+
+SELECT s.email
+FROM chinook.staff as s
+WHERE s.city = 'Calgary' 
+    AND extract(year FROM cast(s.hire_date as date)) = 2002
