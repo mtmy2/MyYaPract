@@ -75,3 +75,6 @@ SELECT
     DATE_TRUNC('day', '2001-01-13 12:34:56'::date),
     DATE_TRUNC('day', '2001-01-13 12:34:56'::date)::timestamp,
     DATE_TRUNC('minute', '2001-01-13 12:34:56'::timestamp); 
+
+
+    
