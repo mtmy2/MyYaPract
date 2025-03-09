@@ -32,3 +32,13 @@ FROM chinook.artist AS a
 NATURAL LEFT JOIN chinook.album AS al
 WHERE album_id is NULL
 
+
+4.
+Среди категорий фильмов есть три категории на букву C — Children, Classics, Comedy. Посчитайте общее количество фильмов в этих трёх категориях.
+
+SELECT COUNT(*) 
+FROM chinook.movie AS m
+INNER JOIN chinook.film_category AS fc USING (film_id)
+INNER JOIN chinook.category AS c USING (category_id)
+WHERE 
+    c.name LIKE 'C%'
