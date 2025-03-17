@@ -62,3 +62,5 @@ CREATE TABLE clients_copy_start (
     phone VARCHAR,
     city VARCHAR
 ); 
+
+.
