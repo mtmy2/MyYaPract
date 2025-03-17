@@ -1,0 +1,47 @@
+Первоначальные данне было решено разбить на таблицы.
+Дочерней таблицей выступает таблица sales. Она создана на базе исходной таблицы.
+
+sales:
+    id serial PRIMARY KEY,  
+	auto_id integer,
+	price numeric(9,2) NOT NULL CHECK(price>=0), --  проверка на неотрицательные значения, согласно тербованиям - семизначное число с одинм знаком после запятой
+	date date NOT NULL DEFAULT CURRENT_DATE, -- текущая дата по умолчанию при создании новой записи
+	client_id integer,
+	discount SMALLINT NOT NULL CHECK(discount >=0 AND discount <= 100) --проверка на диапазон от 0 до 100
+
+Из исходной таблицы выделена родительская таблицы auto и clients для описания конкретного автомобиля и покупателя.
+
+auto:
+	id serial PRIMARY KEY,
+	brand_id integer NOT NULL,
+	model_id integer NOT NULL,
+	colour_id integer NOT NULL
+
+clients:
+    serial PRIMARY KEY,
+	first_name varchar NOT NULL,
+	last_name varchar NOT NULL,
+	phone varchar
+
+Для таблицы auto родительской созданы таблицы brand, model и colour:
+
+brand
+	id serial PRIMARY KEY,
+	brand_name varchar NOT NULL UNIQUE, -- бренды не должны повторяться
+	brand_origin_id SMALLINT 
+model
+	id serial PRIMARY KEY,
+	brand_id integer NOT NULL,
+	model_name varchar NOT NULL,
+	gasoline_consumption numeric(3, 1) -- согласно тербованиям - двузначное число с одинм знаком после запятой
+
+colour 
+	id serial PRIMARY KEY,
+	colour varchar NOT NULL UNIQUE -- цвета не должны повторяться
+
+для brand родительской таблицей будет brand_origin:
+brand_origin 
+	id serial PRIMARY KEY,
+	brand_origin varchar UNIQUE -- в базе некоторые бренды не имеют страны, поэтому оганичения Not null не добавлено, но надо бы
+
+
