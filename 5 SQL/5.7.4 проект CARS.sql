@@ -76,8 +76,25 @@ CREATE TABLE car_shop.sales (
 
 /* Заполнение данными */
 
+/*заполнение таблицы brand_origin*/
 INSERT INTO car_shop.brand_origin (brand_origin)
 SELECT DISTINCT brand_origin FROM raw_data.sales;
 
+-- TRUNCATE TABLE car_shop.model RESTART IDENTITY
 
+/*заполнение таблицы brand*/
+INSERT INTO car_shop.brand (brand_name, brand_origin_id)
+SELECT DISTINCT 
+	SPLIT_PART(s.auto, ' ', 1), 
+	bo.id
+FROM raw_data.sales AS s
+INNER JOIN car_shop.brand_origin AS bo USING(brand_origin)
 
+/*заполнение таблицы model*/
+INSERT INTO car_shop.model (brand_id, model_name, gasoline_consumption)
+SELECT DISTINCT 
+	b.id,
+	TRIM(SPLIT_PART(s.auto, ' ', 2), ','), 
+	s.gasoline_consumption
+FROM raw_data.sales AS s
+LEFT JOIN car_shop.brand AS b ON b.brand_name = SPLIT_PART(s.auto, ' ', 1)
