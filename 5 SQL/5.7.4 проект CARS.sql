@@ -56,8 +56,10 @@ CREATE TABLE car_shop.auto (
 
 CREATE TABLE car_shop.clients (
 	id serial PRIMARY KEY,
+	prefix varchar, -- префикс в виде текста, может быть путсым
 	first_name varchar NOT NULL, -- имя в виде текста, не пустой
 	last_name varchar NOT NULL, -- фамилия в виде текста, не пустой
+	jr varchar, -- приставка Jr. там где нобходима
 	phone varchar -- телефон в виде текста, может быть пустым
 );
 
@@ -94,7 +96,69 @@ INNER JOIN car_shop.brand_origin AS bo USING(brand_origin)
 INSERT INTO car_shop.model (brand_id, model_name, gasoline_consumption)
 SELECT DISTINCT 
 	b.id,
-	TRIM(SPLIT_PART(s.auto, ' ', 2), ','), 
+	SUBSTR(SPLIT_PART(s.auto, ',', 1), STRPOS(SPLIT_PART(s.auto, ',', 1), ' ')+1), 
 	s.gasoline_consumption
 FROM raw_data.sales AS s
+LEFT JOIN car_shop.brand AS b ON b.brand_name = SPLIT_PART(s.auto, ' ', 1);
+
+
+/*заполнение таблицы colour*/
+INSERT INTO car_shop.colour (colour)
+SELECT DISTINCT 
+	TRIM(SPLIT_PART(s.auto, ',', 2))
+FROM raw_data.sales AS s
+
+
+/*заполнение таблицы auto*/
+INSERT INTO car_shop.auto (brand_id, model_id, colour_id)
+SELECT 
+	b.id,
+	m.id,
+	c.id
+FROM raw_data.sales AS s
 LEFT JOIN car_shop.brand AS b ON b.brand_name = SPLIT_PART(s.auto, ' ', 1)
+LEFT JOIN car_shop.model AS m ON m.model_name = SUBSTR(SPLIT_PART(s.auto, ',', 1), STRPOS(SPLIT_PART(s.auto, ',', 1), ' ')+1)
+LEFT JOIN car_shop.colour AS c ON c.colour = TRIM(SPLIT_PART(s.auto, ',', 2));
+
+
+/*заполнение таблицы clients*/
+INSERT INTO car_shop.clients (prefix, first_name, last_name, jr, phone)
+SELECT DISTINCT 
+	CASE 
+		WHEN SPLIT_PART(s.person_name, '. ', 2) = '' THEN NULL
+		WHEN SPLIT_PART(s.person_name, '. ', 2) <> '' THEN SPLIT_PART(s.person_name, '. ', 1) || '.'
+	END,
+	CASE 
+		WHEN SPLIT_PART(s.person_name, '. ', 2) = '' THEN SPLIT_PART(SPLIT_PART(s.person_name, '. ', 1), ' ', 1)
+		WHEN SPLIT_PART(s.person_name, '. ', 2) <> '' THEN SPLIT_PART(SPLIT_PART(s.person_name, '. ', 2), ' ', 1)
+	END,
+	CASE 
+		WHEN SPLIT_PART(s.person_name, '. ', 2) = '' THEN SPLIT_PART(SPLIT_PART(s.person_name, '. ', 1), ' ', 2)
+		WHEN SPLIT_PART(s.person_name, '. ', 2) <> '' THEN SPLIT_PART(SPLIT_PART(s.person_name, '. ', 2), ' ', 2)
+	END,
+	CASE 
+		WHEN STRPOS(s.person_name, 'Jr.') > 0 THEN 'Jr.'
+		ELSE NULL 
+	END,
+	s.phone
+FROM raw_data.sales AS s;
+
+
+/*заполнение таблицы sales*/
+INSERT INTO car_shop.sales (auto_id, price, date, client_id, discount)
+SELECT 
+	a.id,
+	s.price,
+	s.date,
+	cl.id,
+	s.discount
+FROM raw_data.sales AS s
+LEFT JOIN car_shop.brand AS b ON b.brand_name = SPLIT_PART(s.auto, ' ', 1)
+LEFT JOIN car_shop.model AS m ON m.model_name = SUBSTR(SPLIT_PART(s.auto, ',', 1), STRPOS(SPLIT_PART(s.auto, ',', 1), ' ')+1)
+LEFT JOIN car_shop.colour AS c ON c.colour = TRIM(SPLIT_PART(s.auto, ',', 2))
+LEFT JOIN car_shop.auto AS a ON a.brand_id = b.id AND a.model_id = m.id AND a.colour_id = c.id
+LEFT JOIN car_shop.clients AS cl ON POSITION(cl.first_name || cl.last_name IN REPLACE(s.person_name, ' ', ''))>0
+; 
+
+
+
