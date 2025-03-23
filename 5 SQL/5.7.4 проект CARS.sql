@@ -161,4 +161,44 @@ LEFT JOIN car_shop.clients AS cl ON POSITION(cl.first_name || cl.last_name IN RE
 ; 
 
 
+/*
+Задание 1 из 6
+Напишите запрос, который выведет процент моделей машин, у которых нет параметра gasoline_consumption.
+Вот формат итоговой таблицы:
+*/
+SELECT 
+  ((1-COUNT(m.gasoline_consumption)::real/COUNT(*))*100)::numeric(4, 2) AS nulls_percentage_gasoline_consumption
+FROM car_shop.model AS m;
 
+
+/*
+Задание 2 из 6
+Напишите запрос, который покажет название бренда и среднюю цену его автомобилей в разбивке по всем годам с учётом скидки. 
+Итоговый результат отсортируйте по названию бренда и году в восходящем порядке.
+Среднюю цену округлите до второго знака после запятой.
+*/
+SELECT 
+  b.brand_name,
+  DATE_PART('year', s.date) AS YEAR,
+  AVG(s.price)::numeric(9, 2) AS price_avg
+FROM car_shop.sales AS S
+LEFT JOIN car_shop.auto AS a ON a.id = s.auto_id
+LEFT JOIN car_shop.brand AS b ON a.brand_id = b.id
+GROUP BY b.brand_name, YEAR
+ORDER BY b.brand_name, YEAR;
+
+
+/*
+Задание 3 из 6
+Посчитайте среднюю цену всех автомобилей с разбивкой по месяцам в 2022 году с учётом скидки. 
+Результат отсортируйте по месяцам в восходящем порядке. 
+Среднюю цену округлите до второго знака после запятой.
+*/
+
+SELECT 
+  DATE_PART('month', s.date) AS month,
+  DATE_PART('year', s.date) AS YEAR,
+  AVG(s.price)::numeric(9, 2) AS price_avg
+FROM car_shop.sales AS S
+GROUP BY YEAR, month 
+ORDER BY YEAR, month;
