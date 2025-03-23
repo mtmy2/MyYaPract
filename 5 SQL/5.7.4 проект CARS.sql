@@ -202,3 +202,23 @@ SELECT
 FROM car_shop.sales AS S
 GROUP BY YEAR, month 
 ORDER BY YEAR, month;
+
+/*Задание 4 из 6
+Используя функцию STRING_AGG, напишите запрос, который выведет список купленных машин у каждого пользователя через запятую. 
+Пользователь может купить две одинаковые машины — это нормально. 
+Название машины покажите полное, с названием бренда — например: Tesla Model 3. 
+Отсортируйте по имени пользователя в восходящем порядке. 
+Сортировка внутри самой строки с машинами не нужна.*/
+
+SELECT 
+  CONCAT(c.first_name, ' ', c.last_name) AS person,
+  STRING_AGG(CONCAT(b.brand_name, ' ', m.model_name), ', ') AS cars
+FROM car_shop.sales AS s
+LEFT JOIN car_shop.auto AS a ON a.id = s.auto_id
+LEFT JOIN car_shop.brand AS b ON a.brand_id = b.id
+LEFT JOIN car_shop.model AS m ON a.model_id = m.id
+LEFT JOIN car_shop.clients AS c ON s.client_id = c.id
+GROUP BY person 
+ORDER BY person;
+
+
