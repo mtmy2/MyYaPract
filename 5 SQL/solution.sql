@@ -31,7 +31,7 @@ CREATE TABLE car_shop.brand_origin (
 CREATE TABLE car_shop.brand (
 	id serial PRIMARY KEY,
 	brand_name varchar NOT NULL UNIQUE, -- название страны в тектсовом виде
-	brand_origin_id SMALLINT -- список стран будет коротким
+	brand_origin_id smalint references (car_shop.brand_origin.id) --rev2: добавлен внешний ключ
 );
 
 CREATE TABLE car_shop.colour (
@@ -41,14 +41,14 @@ CREATE TABLE car_shop.colour (
 
 CREATE TABLE car_shop.model (
 	id serial PRIMARY KEY,
-	brand_id integer NOT NULL,
+	brand_id integer NOT NULL references (car_shop.brand.id), --rev2: добавлен внешний ключ
 	model_name varchar NOT NULL, -- модель в виде текста, не пустой, возможно может повторяться у разных бренодов
 	gasoline_consumption numeric(3, 1) -- двзначное число с дробной частью
 );
 
 CREATE TABLE car_shop.auto (
 	id serial PRIMARY KEY,
-	brand_id integer NOT NULL,
+	 -- rev2: удалено поле во избежание несогласованного состояния "brand_id integer NOT NULL,"
 	model_id integer NOT NULL,
 	colour_id integer NOT NULL
 );
@@ -90,7 +90,8 @@ SELECT DISTINCT
 	SPLIT_PART(s.auto, ' ', 1), 
 	bo.id
 FROM raw_data.sales AS s
-INNER JOIN car_shop.brand_origin AS bo USING(brand_origin)
+LEFT JOIN car_shop.brand_origin AS bo USING(brand_origin) /*rev2: так как таблица brand origin имеет в своем списке занчение NULL то Porsche не потерялось. 
+															Однако приму к сведению данную особенность, напишу через left join*/
 
 /*заполнение таблицы model*/
 INSERT INTO car_shop.model (brand_id, model_name, gasoline_consumption)
@@ -111,7 +112,13 @@ FROM raw_data.sales AS s
 
 /*заполнение таблицы auto*/
 INSERT INTO car_shop.auto (brand_id, model_id, colour_id)
-SELECT 
+SELECT DISTINCT /* rev2^ Да я ожидал дискусси по ҝтому поводу)
+					Тоже думал что достаточно униакльного сочетания 3х параметров, но подумал, что в реальной практике автосалону важно не столько
+					иметь бренд модель и цвет, сколько индивидауализировать каждый экземпляр автомобиля. То есть каждый объект таблицы это конкретный вато, который впсоледующем
+					компания может обновить добавав напрмер VIN, пробег, индивидуальные особенности тех состояния и т.п. То есть это будет как таблица с клиентами:
+					 несмотря на схожиее имя и фамилию люди это разные.
+					 Я переделаю по текщему учебному заданию - добавлю Distinct, и я думал об этом. 
+					 Однако потворюсь на практике я бы подумал о дальнейшем развитии базы, и логике этой таблицы */ 
 	b.id,
 	m.id,
 	c.id
