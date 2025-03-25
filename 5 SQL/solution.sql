@@ -163,7 +163,7 @@ FROM raw_data.sales AS s
 LEFT JOIN car_shop.brand AS b ON b.brand_name = SPLIT_PART(s.auto, ' ', 1)
 LEFT JOIN car_shop.model AS m ON m.model_name = SUBSTR(SPLIT_PART(s.auto, ',', 1), STRPOS(SPLIT_PART(s.auto, ',', 1), ' ')+1)
 LEFT JOIN car_shop.colour AS c ON c.colour = TRIM(SPLIT_PART(s.auto, ',', 2))
-LEFT JOIN car_shop.auto AS a ON a.brand_id = b.id AND a.model_id = m.id AND a.colour_id = c.id
+LEFT JOIN car_shop.auto AS a ON a.brand_id = b.id AND a.model_id = m.id AND a.colour_id = c.id --rev2: не совсем понял почему будет 7 тыс строк. У меня таблица вышла на 1004 строки.
 LEFT JOIN car_shop.clients AS cl ON POSITION(cl.first_name || cl.last_name IN REPLACE(s.person_name, ' ', ''))>0
 ; 
 
