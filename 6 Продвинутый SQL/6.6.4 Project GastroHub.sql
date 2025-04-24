@@ -13,7 +13,8 @@ CREATE type cafe.restaurant_type AS ENUM ('coffee_shop', 'restaurant', 'bar', 'p
 CREATE TABLE cafe.restaurants
 	(restaurant_uuid UUID DEFAULT GEN_RANDOM_UUID(),
 	name varchar NOT NULL UNIQUE,
-	type cafe.restaurant_type);
+	type cafe.restaurant_type,
+	menu jsonb);
 	
 /*Шаг 3. Создайте таблицу cafe.managers с информацией о менеджерах. 
 В качестве первичного ключа используйте случайно сгенерированный uuid. 
@@ -50,9 +51,10 @@ CREATE TABLE cafe.sales
 /*Шаг 6. Наполните все созданные таблицы данными, которые хранятся в дампе.*/
 
 -- Таблица restaurants
-INSERT INTO cafe.restaurants (name, type)
-SELECT DISTINCT cafe_name, TYPE::cafe.restaurant_type
-FROM raw_data.sales s;
+INSERT INTO cafe.restaurants (name, type, menu)
+SELECT DISTINCT cafe_name, TYPE::cafe.restaurant_type, m.menu
+FROM raw_data.sales s
+LEFT JOIN raw_data.menu m USING (cafe_name);
 
 -- Таблица managers
 INSERT INTO cafe.managers (name, phone)
@@ -165,3 +167,85 @@ USING(restaurant_uuid)
 GROUP BY r.name
 ORDER BY count(*) DESC
 LIMIT 3
+
+
+/*Задание 4
+Найдите пиццерию с самым большим количеством пицц в меню. Если таких пиццерий несколько, выведите все.*/
+
+WITH pizzas_cafe AS (
+	SELECT 
+		name,
+		jsonb_each(menu -> 'Пицца') AS pizza
+	FROM cafe.restaurants
+	GROUP BY name, pizza
+	),
+	pizzas_count AS (
+	SELECT
+		name,
+		count(*) AS pizza_count,
+		DENSE_RANK() OVER(ORDER BY count(*) DESC) AS cafe_rank
+	FROM pizzas_cafe
+	GROUP BY name
+	ORDER BY pizza_count DESC)
+SELECT 
+	name,
+	pizza_count
+FROM pizzas_count
+WHERE pizza_count = (SELECT max(pizza_count) FROM pizzas_count)
+
+
+
+
+Задание 5
+Найдите самую дорогую пиццу для каждой пиццерии.
+
+WITH pizzas_ranged_price AS (
+	SELECT 
+		DISTINCT name,
+		TRIM(SPLIT_PART(jsonb_each(menu -> 'Пицца')::text, ',', 1), '(""')::text AS pizza_name,
+		TRIM(SPLIT_PART(jsonb_each(menu -> 'Пицца')::text, ',', 2), ')')::integer AS pizza_price,
+		DENSE_RANK() OVER(PARTITION BY name ORDER BY TRIM(SPLIT_PART(jsonb_each(menu -> 'Пицца')::text, ',', 2), ')')::integer DESC) AS price_rank
+	FROM cafe.restaurants
+	GROUP BY name, pizza_name, pizza_price)
+SELECT
+	name,
+	'Пицца' AS type,
+	pizza_name,
+	pizza_price
+FROM pizzas_ranged_price
+WHERE price_rank = 1
+ORDER BY pizza_price DESC;
+
+
+Задание 6
+В Gastro Hub решили проверить новую продуктовую гипотезу и поднять цены на капучино. 
+Маркетологи компании собрали совещание, чтобы обсудить, на сколько стоит поднять цены. 
+В это время для отчётности использовать старые цены нельзя. После обсуждения решили увеличить цены на капучино на 20%.
+Обновите данные по ценам так, чтобы до завершения обновления никто не вносил других изменений в цены этих заведений. 
+В заведениях, где цены не меняются, данные о меню должны остаться в полном доступе.
+Поясните принятое решение в комментариях к скрипту.
+
+BEGIN;
+
+WITH bavereges AS (
+	SELECT -- создаем таблицу с напитками с отдельным столбцом для цены. столбцы название кафе, название напитка, цена
+		DISTINCT name,
+		TRIM(SPLIT_PART(jsonb_each(menu -> 'Кофе')::text, ',', 1), '(""')::text AS coffe_name,
+		TRIM(SPLIT_PART(jsonb_each(menu -> 'Кофе')::text, ',', 2), ')')::integer AS coffe_price
+	FROM cafe.restaurants
+	GROUP BY name, coffe_name, coffe_price
+	)
+new_price AS (
+	SELECT --из предыдущей таблицы делаем срез по напитку Капучино и увеличиваем цену в 1.2 раза
+		name,
+		coffe_name,
+		coffe_price * 1.2 AS cappucino_new_price
+	FROM bavereges
+	WHERE coffe_name = 'Капучино'
+	FOR UPDATE) -- для блокировки данных строк используем исключительную блокировку на время транзакции
+UPDATE cafe.restaurants AS r
+SET menu = jsonb_set(menu, '{Кофе, Капучино}', np.cappucino_new_price::text) -- вставляем новую цену в меню в те строки где есть капучино
+FROM new_price AS np
+WHERE np.name=r.name;
+
+COMMIT;
