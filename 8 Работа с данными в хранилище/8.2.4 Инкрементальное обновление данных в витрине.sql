@@ -123,3 +123,71 @@ CREATE TABLE IF NOT EXISTS dwh.load_dates_craftsman_report_datamart (
 );
 
 
+
+2.
+Напишите SQL-запрос, который получает только обновлённые или новые данные из хранилища в схеме dwh. Данные нужно сохранить в таблицу dwh.dwh_delta — они будут использованы в следующих шагах.
+Для этого понадобится объединить данные из таблиц: dwh.f_order, dwh.d_craftsman, dwh.d_customer, dwh.d_product с данными из витрины dwh.craftsman_report_datamart. Выберите только те данные, дата загрузки которых не превышает дату из таблицы загрузок dwh.load_dates_craftsman_report_datamart.
+В SELECT-запросе нужно получить следующие столбцы:
+craftsman_id, craftsman_name, craftsman_address, craftsman_birthday, craftsman_email, craftsman_load_dttm — из таблицы dwh.d_craftsman;
+order_id — из dwh.f_order;
+product_id, product_price, product_type — из таблицы dwh.d_product;
+customer_age — можно получить из поля customer_birthday таблицы dwh.d_customer при помощи функции date_part('year', age(column));
+diff_order_date — можно получить как разность значений из колонок order_completion_date и order_created_date из таблицы dwh.f_order;
+order_status — из таблицы dwh.f_order;
+report_period — можно получить из поля order_created_date таблицы dwh.f_order при помощи функции to_char(column, ‘yyyy-mm’);
+exist_craftsman_id — можно получить из таблицы dwh.craftsman_report_datamart (эта колонка нужна, чтобы понять, какие craftsman_id уже есть в витрине, нужно ли применить к ним UPDATE или INSERT);
+craftsman_load_dttm — из таблицы dwh.d_craftsman;
+customers_load_dttm — из таблицы dwh.d_customer;
+products_load_dttm — из таблицы dwh.d_product.
+Первый раз инкрементальная загрузка сработает как полное перестроение витрины: изначально витрина пустая, поэтому нужно будет загрузить в неё все данные. Чтобы в витрину данные попали в первый раз, надо сначала в таблицу загрузок вставить значение с минимальной датой, чтобы началась первая загрузка. Возьмите в качестве такого значения '1900-01-01’.
+
+
+'''-- первая таблица dwh_delta: определяем, какие данные были изменены в витрине данных или добавлены в DWH 
+-- формируем дельту изменений'''
+DROP TABLE IF EXISTS dwh.dwh_delta;
+CREATE TABLE IF NOT EXISTS dwh.dwh_delta AS (
+	SELECT 	
+			dc.craftsman_id AS craftsman_id,
+			dc.craftsman_name AS craftsman_name,
+			dc.craftsman_address AS craftsman_address,
+			dc.craftsman_birthday AS craftsman_birthday,
+			dc.craftsman_email AS craftsman_email,
+			fo.order_id AS order_id,
+			dp.product_id AS product_id,
+			dp.product_price AS product_price,
+			dp.product_type AS product_type,
+			date_part('year', age(dcs.customer_birthday)) AS customer_age,
+			fo.order_completion_date - fo.order_created_date AS diff_order_date, 
+			fo.order_status AS order_status,
+			to_char(fo.order_created_date, 'yyyy-mm') AS report_period,
+			crd.craftsman_id AS exist_craftsman_id,
+			dc.load_dttm AS craftsman_load_dttm,
+			dc.load_dttm AS customers_load_dttm,
+			dp.load_dttm AS products_load_dttm
+			FROM dwh.f_order fo 
+				INNER JOIN dwh.d_craftsman dc ON fo.craftsman_id = dc.craftsman_id 
+				INNER JOIN dwh.d_customer dcs ON fo.customer_id = dcs.customer_id -- напишите код здесь 
+				INNER JOIN dwh.d_product dp ON fo.product_id = dp.product_id -- напишите код здесь 
+				LEFT JOIN dwh.craftsman_report_datamart crd ON fo.order_id = crd.id  -- напишите код здесь 
+					WHERE fo.load_dttm > (SELECT COALESCE(MAX(load_dttm),'1900-01-01') FROM dwh.load_dates_craftsman_report_datamart) OR
+								dcs.load_dttm > (SELECT COALESCE(MAX(load_dttm),'1900-01-01') FROM dwh.load_dates_craftsman_report_datamart) OR
+								dp.load_dttm > (SELECT COALESCE(MAX(load_dttm),'1900-01-01') FROM dwh.load_dates_craftsman_report_datamart) OR
+								dc.load_dttm > (SELECT COALESCE(MAX(load_dttm),'1900-01-01') FROM dwh.load_dates_craftsman_report_datamart)
+);
+
+
+
+3.
+В выборке dwh.dwh_delta содержится информация о новых и обновлённых данных. Чтобы определить, какие данные надо обновить, напишите SELECT-запрос в таблицу dwh.dwh_delta, который вернёт craftsman_id только изменённых данных.
+
+
+-- создаём таблицу dwh.dwh_update_delta: делаем выборку мастеров, по которым были изменения в DWH. Данные по этим мастерам нужно будет обновить в витрине.
+DROP TABLE IF EXISTS dwh.dwh_update_delta;
+CREATE TABLE IF NOT EXISTS dwh.dwh_update_delta AS (
+	SELECT dd.craftsman_id 
+    FROM dwh.dwh_delta dd 
+    where dd.exist_craftsman_id is not NULL	
+);
+
+-- проверка данных
+---SELECT * FROM dwh.dwh_update_delta;
