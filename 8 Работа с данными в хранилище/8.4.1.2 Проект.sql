@@ -228,7 +228,7 @@ COMMENT ON COLUMN dwh.customer_report_datamart.report_period IS 'Отчётны�
 
 
 --Шаг 6. Напишите скрипт для инкрементального обновления витрины
-
+  
 BEGIN TRANSACTION;
 DROP TABLE IF EXISTS dwh.load_dates_customer_report_datamart;
 
